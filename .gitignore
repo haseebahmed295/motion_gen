@@ -1,0 +1,8 @@
+/runtime
+/GGUF
+motion_output.npz
+motion_output.json
+/__pycache__
+HY-Motion-1.0/latest.ckpt
+motion_gen.zip
+clip-vit-large-patch14/pytorch_model.bin
