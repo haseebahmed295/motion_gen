@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motion Gen &middot; Blender Addon Documentation</title>
+  <meta name="description" content="Official documentation for the Motion Gen Blender Addon — generate 3D motion from text prompts using AI diffusion models." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════ NAV ═══════════════════════ -->
+<nav class="doc-nav" id="doc-nav">
+  <div class="doc-nav__inner">
+    <a href="#overview">Overview</a>
+    <a href="#features">Features</a>
+    <a href="#requirements">Requirements</a>
+    <a href="#installation">Installation</a>
+    <a href="#ui-guide">UI Guide</a>
+    <a href="#prompting">Prompting</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#versions">Versions</a>
+    <a href="#licenses">Licenses</a>
+    <a href="details.html" style="border-left:1px solid var(--border-subtle);padding-left:18px;margin-left:6px">Details &amp; FAQ →</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- ═══════════════════════ HERO ═══════════════════════ -->
+  <header class="hero reveal" id="overview">
+    <span class="hero__badge">⚡ v1.0 — Blender 4.2+</span>
+    <h1>Motion Gen</h1>
+    <p class="hero__sub">
+      Type a sentence, get a full 3D character animation. Motion Gen bridges natural language and physics-based motion synthesis directly inside Blender — no mocap studio, no keyframing, no pipeline juggling.
+    </p>
+    <div class="hero__tags">
+      <span class="hero__tag">Text-to-Motion</span>
+      <span class="hero__tag">Diffusion Model</span>
+      <span class="hero__tag">Blender Integration</span>
+      <span class="hero__tag">Auto Rigging</span>
+      <span class="hero__tag">GPU &amp; CPU</span>
+    </div>
+  </header>
+
+
+  <!-- ═══════════════ WHAT IS MOTION GEN ═══════════════ -->
+  <section class="section reveal" id="about">
+    <span class="section__label">01 — Overview</span>
+    <h2 class="section__title">What is Motion Gen?</h2>
+    <p class="section__desc">
+      Motion Gen is a Blender addon that lets you generate realistic 3D humanoid animations from plain-English text prompts. Under the hood it orchestrates a multi-model AI pipeline: a large language model (Qwen 3-8B) interprets your prompt and translates it into a structured motion description, a CLIP vision-language encoder aligns the semantics, and a 1-billion-parameter diffusion network synthesises the actual joint rotations and root translations frame-by-frame.
+    </p>
+    <p class="section__desc">
+      The result is automatically mapped onto a built-in SMPL-X character armature and imported into your Blender scene — ready to render, retarget, or refine. The entire process runs locally on your machine; no cloud API, no subscription, no internet required after initial setup.
+    </p>
+  </section>
+
+
+  <!-- ═══════════════ FEATURES ═══════════════ -->
+  <section class="section reveal" id="features">
+    <span class="section__label">02 — Features</span>
+    <h2 class="section__title">What You Get</h2>
+    <p class="section__desc">A complete prompt-to-animation pipeline, entirely offline and deeply integrated into Blender.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-card__icon orange">✍</div>
+        <h3>Prompt-to-Motion</h3>
+        <p>Describe any human motion in natural language — from "a person casually walking" to "a martial arts spinning kick" — and watch it materialise as keyframed animation data.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card__icon green">⚙</div>
+        <h3>Isolated ML Runtime</h3>
+        <p>A fully standalone Python 3.11 environment lives inside the addon folder. Zero conflicts with Blender's built-in Python — install once, forget forever.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card__icon blue">🦴</div>
+        <h3>Auto-Rigging &amp; Import</h3>
+        <p>Generated motion is automatically applied to a bundled SMPL-X armature model. The character appears in your scene with all keyframes baked and ready.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card__icon purple">🎛</div>
+        <h3>Fine-Grained Controls</h3>
+        <p>Tune inference steps, CFG scale, seed, and duration. Use Draft Mode (20 steps) for rapid iteration, then switch to Production (50-60 steps) for final quality.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card__icon red">🖥</div>
+        <h3>GPU + CPU Fallback</h3>
+        <p>Optimised for NVIDIA GPUs with CUDA, but includes a "Force CPU" toggle for AMD, Intel, and Apple Silicon users — or anyone without a dedicated GPU.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-card__icon orange">🔒</div>
+        <h3>Fully Offline</h3>
+        <p>After initial model download, everything runs locally. Your prompts and generated data never leave your machine.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════ SHOWCASE ═══════════════ -->
+  <section class="section reveal" id="showcase">
+    <span class="section__label">02b — Showcase</span>
+    <h2 class="section__title">Generated Animations</h2>
+    <p class="section__desc">Every animation below was generated entirely from a text prompt — no keyframing, no mocap data.</p>
+
+    <div class="showcase-bento">
+      <div class="showcase-cell showcase-cell--wide">
+        <img src="jumping.gif" alt="A person jumping" />
+        <span class="showcase-cell__label">A person jumping</span>
+      </div>
+      <div class="showcase-cell">
+        <img src="Picking_heavy_obj.gif" alt="Picking a heavy object" />
+        <span class="showcase-cell__label">Picking a heavy object</span>
+      </div>
+      <div class="showcase-cell">
+        <img src="Picking_Small_obj.gif" alt="Picking a small object" />
+        <span class="showcase-cell__label">Picking a small object</span>
+      </div>
+      <div class="showcase-cell">
+        <img src="runing_kicking.gif" alt="Running and kicking" />
+        <span class="showcase-cell__label">Running &amp; kicking</span>
+      </div>
+      <div class="showcase-cell">
+        <img src="siting_down.gif" alt="Sitting down" />
+        <span class="showcase-cell__label">Sitting down</span>
+      </div>
+      <div class="showcase-cell showcase-cell--wide">
+        <img src="Runing_slowly.gif" alt="Slow running" />
+        <span class="showcase-cell__label">Slow running</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ SYSTEM REQUIREMENTS ═══════════════ -->
+  <section class="section reveal" id="requirements">
+    <span class="section__label">03 — System Requirements</span>
+    <h2 class="section__title">💻 System Requirements</h2>
+
+    <!-- General -->
+    <div class="general-req">
+      <h3>General Software &amp; Storage</h3>
+      <ul class="spec-list">
+        <li>
+          <span class="label">OS</span>
+          <span class="value">Windows 10 or 11 (64-bit) for the automated 1-click installer. Mac and Linux are supported but require manual terminal setup.</span>
+        </li>
+        <li>
+          <span class="label">Host Software</span>
+          <span class="value">Blender 3.0 or higher.</span>
+        </li>
+        <li>
+          <span class="label">Storage</span>
+          <span class="value">15 GB – 20 GB of free space (SSD highly recommended).</span>
+        </li>
+        <li>
+          <span class="label">Internet</span>
+          <span class="value">Required for the first run to download the AI models and Python environment.</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Tiers -->
+    <div class="tier-grid">
+      <!-- Tier 1 -->
+      <div class="tier-card tier-card--recommended">
+        <span class="tier-card__badge">Tier 1 — Recommended</span>
+        <h3>With Dedicated GPU</h3>
+        <p class="tier-card__sub">Uses dual-hardware architecture: System RAM for text translation, GPU for 3D physics rendering.</p>
+        <ul class="spec-list">
+          <li><span class="label">GPU</span><span class="value">NVIDIA GPU strictly required.</span></li>
+          <li><span class="label">Min VRAM</span><span class="value">8 GB (e.g. RTX 2060 Super, RTX 2080, RTX 3060).</span></li>
+          <li><span class="label">RAM</span><span class="value">16 GB minimum (32 GB recommended). With 16 GB, close heavy background apps before generating.</span></li>
+          <li><span class="label">CPU</span><span class="value">Modern multi-core (Intel i5 / AMD Ryzen 5 or better).</span></li>
+          <li><span class="label">Render Time</span><span class="value">~15 seconds for a standard animation.</span></li>
+        </ul>
+      </div>
+      <!-- Tier 2 -->
+      <div class="tier-card tier-card--fallback">
+        <span class="tier-card__badge">Tier 2 — Fallback</span>
+        <h3>No GPU / Mac / AMD</h3>
+        <p class="tier-card__sub">Enable the <code>Force CPU</code> toggle. Entire multi-model pipeline runs in System RAM.</p>
+        <ul class="spec-list">
+          <li><span class="label">GPU</span><span class="value">None required.</span></li>
+          <li><span class="label">RAM</span><span class="value">32 GB absolute minimum (64 GB highly recommended).</span></li>
+          <li><span class="label">CPU</span><span class="value">High-end modern processor strongly recommended.</span></li>
+        </ul>
+        <div class="callout callout--info" style="margin-top:14px">
+          <span class="callout__icon">💡</span>
+          <div><strong>Why so much RAM?</strong> Without VRAM, your computer must hold the OS, Blender, Qwen3, CLIP, and the 1-billion-parameter motion network entirely in System RAM simultaneously. 16 GB machines will crash.</div>
+        </div>
+        <div class="callout callout--warn" style="margin-top:10px">
+          <span class="callout__icon">⚠️</span>
+          <div><strong>Speed Warning:</strong> CPU rendering is highly accurate but severely bottlenecked. A 3-second animation that takes ~15 s on GPU will take 10–15 minutes on CPU. Please be patient.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ INSTALLATION ═══════════════ -->
+  <section class="section reveal" id="installation">
+    <span class="section__label">04 — Installation</span>
+    <h2 class="section__title">Getting Started</h2>
+    <p class="section__desc">Three steps: install the Blender addon, set up the backend, then import the AI model weights.</p>
+
+    <div class="steps">
+      <!-- Step 1 -->
+      <div class="step" data-step="1">
+        <h3>Install the Addon in Blender</h3>
+        <ul>
+          <li>Download the <code>motion_gen.zip</code> file (do <strong>not</strong> extract it).</li>
+          <li>Open Blender (version 4.2.0 or higher recommended).</li>
+          <li>Go to <strong>Edit → Preferences → Add-ons</strong>.</li>
+          <li>Click <strong>Install…</strong> at the top right.</li>
+          <li>Locate and select <code>motion_gen.zip</code>, then click <strong>Install Add-on</strong>.</li>
+          <li>Enable the addon by checking the box next to <strong>Animation: Motion Gen</strong>.</li>
+        </ul>
+        <img src="install_zip.gif" alt="Installing addon zip in Blender Preferences" style="border-radius:var(--r-sm);margin:16px 0;width:100%" />
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step" data-step="2">
+        <h3>Install the Motion Gen Backend</h3>
+        <ul>
+          <li>Once enabled, expand the addon details by clicking the arrow next to its name.</li>
+          <li>In the <strong>Local Setup</strong> section, you will see the status of the Python runtime environment.</li>
+          <li>Click <strong>Install Python Runtime</strong> (or <strong>Install Motion Gen Backend</strong>). This will configure a standalone Python instance just for the addon.</li>
+          <li>Wait for the installation to finish. You can check the Blender system console (<strong>Window → Toggle System Console</strong>) for progress.</li>
+          <li>Wait until the status says <strong>Runtime and Dependencies Installed!</strong></li>
+        </ul>
+        <img src="python.gif" alt="Python runtime installation progress" style="border-radius:var(--r-sm);margin:16px 0;width:100%" />
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" data-step="3">
+        <h3>Download &amp; Import AI Models</h3>
+        <p>Due to their large size, the AI models must be downloaded separately.</p>
+        <ul>
+          <li>In the addon preferences under <strong>AI Model Paths</strong>, click the provided links to download:
+            <ul>
+              <li><a href="https://huggingface.co/tencent/HY-Motion-1.0/resolve/main/HY-Motion-1.0/latest.ckpt">Download latest.ckpt (1.8 GB)</a></li>
+              <li><a href="https://huggingface.co/unsloth/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-UD-Q5_K_XL.gguf">Download Qwen GGUF (5.8 GB)</a></li>
+            </ul>
+          </li>
+          <li>Use the file selectors in the addon preferences to point to the downloaded files.</li>
+          <li>Click <strong>Import Selected Models</strong>. The addon will copy these files to the correct internal directories.</li>
+          <li>When finished, it will display <strong>All required models found locally!</strong></li>
+        </ul>
+        <img src="models.gif" alt="Model download and import process" style="border-radius:var(--r-sm);margin:16px 0;width:100%" />
+      </div>
+    </div>
+
+    <div class="callout callout--tip" style="margin-top:28px">
+      <span class="callout__icon">💡</span>
+      <div><strong>Tip:</strong> After all three steps are done, open the 3D Viewport, press <code>N</code> to open the Sidebar, go to the <strong>Motion Gen</strong> tab, type a prompt, and click <strong>Generate &amp; Load Motion</strong>.</div>
+    </div>
+  </section>
+
+  <img src="Interface.gif" alt="Full generation workflow" style="border-radius:var(--r-md);margin:24px 0" />
+
+  <!-- ═══════════════ UI GUIDE ═══════════════ -->
+  <section class="section reveal" id="ui-guide">
+    <span class="section__label">04b — Interface</span>
+    <h2 class="section__title">Understanding the Panel</h2>
+    <p class="section__desc">Every control in the Motion Gen sidebar panel explained — from prompt input to the final generate button.</p>
+
+    <div class="ui-walkthrough">
+      <!-- LEFT: bento control cards -->
+      <div class="ui-cards">
+
+        <div class="ui-card ui-card--span">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(245,166,65,0.12);color:var(--accent)">✍</span>
+            <h3>Motion Prompt</h3>
+          </div>
+          <p>Describe the animation in plain English. Focus on concrete physical actions. Keep under 60 words.</p>
+          <div class="ui-card__meta"><span>Type:</span> Free text &nbsp;·&nbsp; <span>Default:</span> <code>A person jumping over a low wall</code></div>
+        </div>
+
+        <div class="ui-card">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(98,182,231,0.12);color:var(--blue)">⏱</span>
+            <h3>Duration (s)</h3>
+          </div>
+          <p>Animation length in seconds. Longer = more frames but slower generation. Caps at 12s (360 frames).</p>
+          <div class="ui-card__meta"><span>Range:</span> 0.5 – 30 &nbsp;·&nbsp; <span>Default:</span> <code>3.0</code></div>
+        </div>
+
+        <div class="ui-card">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(102,217,160,0.12);color:var(--green)">⚡</span>
+            <h3>Draft Mode</h3>
+          </div>
+          <p>Locks steps to 20 for fast rough previews. Turn off for final quality.</p>
+          <div class="ui-card__meta"><span>Type:</span> Toggle &nbsp;·&nbsp; <span>Default:</span> <code>Off</code></div>
+        </div>
+
+        <div class="ui-card">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(179,136,245,0.12);color:var(--purple)">🔢</span>
+            <h3>Steps</h3>
+          </div>
+          <p>Diffusion iterations. More = smoother physics. 20–30 for drafts, 50–60 for production.</p>
+          <div class="ui-card__meta"><span>Range:</span> 10 – 100 &nbsp;·&nbsp; <span>Default:</span> <code>50</code></div>
+        </div>
+
+        <div class="ui-card">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(245,166,65,0.12);color:var(--accent)">🎚</span>
+            <h3>CFG Scale</h3>
+          </div>
+          <p>Prompt adherence vs. physics. Low (2–4) = natural flow. High (5–7) = strict prompt. Above 8 may jitter.</p>
+          <div class="ui-card__meta"><span>Range:</span> 1.0 – 10.0 &nbsp;·&nbsp; <span>Default:</span> <code>5.0</code></div>
+        </div>
+
+        <div class="ui-card">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(240,96,96,0.12);color:var(--red)">🎲</span>
+            <h3>Seed</h3>
+          </div>
+          <p>Set <strong>-1</strong> for random variation each time. Use a fixed number to reproduce a specific result.</p>
+          <div class="ui-card__meta"><span>Range:</span> -1 – ∞ &nbsp;·&nbsp; <span>Default:</span> <code>-1</code></div>
+        </div>
+
+        <div class="ui-card ui-card--action ui-card--span">
+          <div class="ui-card__header">
+            <span class="ui-card__icon" style="background:rgba(102,217,160,0.12);color:var(--green)">▶</span>
+            <h3>Generate &amp; Load Motion</h3>
+          </div>
+          <p>Runs the full pipeline — encodes your prompt, generates motion via diffusion, and imports a rigged character with the baked animation. Shows elapsed time and live status during generation.</p>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: screenshot -->
+      <div class="ui-screenshot">
+        <div class="ui-screenshot__sticky">
+          <img src="Addon_interface.png" alt="Motion Gen panel interface" style="border-radius:var(--r-sm);width:100%" />
+          <p class="ui-screenshot__caption">The Motion Gen panel lives in the 3D Viewport sidebar. Press <code>N</code> to toggle it.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════ PROMPTING GUIDE ═══════════════ -->
+  <section class="section reveal" id="prompting">
+    <span class="section__label">05 — Prompting Guide</span>
+    <h2 class="section__title">Prompting Guide &amp; Best Practices</h2>
+    <p class="section__desc">Getting great results starts with writing great prompts. Follow these guidelines to get the most out of Motion Gen's text-to-motion pipeline.</p>
+
+    <div class="guide-grid">
+      <!-- Language & Length -->
+      <div class="guide-card">
+        <div class="guide-card__header">
+          <span class="guide-card__icon green">🌐</span>
+          <h3>Language &amp; Length</h3>
+        </div>
+        <p>Please use <strong>English</strong>. For optimal results, keep your prompt <strong>under 60 words</strong>.</p>
+      </div>
+
+      <!-- Content Focus -->
+      <div class="guide-card">
+        <div class="guide-card__header">
+          <span class="guide-card__icon orange">🎯</span>
+          <h3>Content Focus</h3>
+        </div>
+        <p>Focus on <strong>action descriptions</strong> or <strong>detailed movements</strong> of the limbs and torso. Concrete physical actions produce the best results.</p>
+      </div>
+    </div>
+
+    <!-- NOT Supported -->
+    <div class="unsupported-block">
+      <h3 class="unsupported-block__title">Current Limitations <span class="unsupported-block__badge">NOT Supported</span></h3>
+      <div class="unsupported-grid">
+        <div class="unsupported-item">
+          <span class="unsupported-item__icon">❌</span>
+          <div>
+            <strong>Non-humanoid Characters</strong>
+            <p>Animations for animals or non-human creatures.</p>
+          </div>
+        </div>
+        <div class="unsupported-item">
+          <span class="unsupported-item__icon">❌</span>
+          <div>
+            <strong>Subjective / Visual Attributes</strong>
+            <p>Descriptions of complex emotions, clothing, or physical appearance.</p>
+          </div>
+        </div>
+        <div class="unsupported-item">
+          <span class="unsupported-item__icon">❌</span>
+          <div>
+            <strong>Environment &amp; Camera</strong>
+            <p>Descriptions of objects, scenes, or camera angles.</p>
+          </div>
+        </div>
+        <div class="unsupported-item">
+          <span class="unsupported-item__icon">❌</span>
+          <div>
+            <strong>Multi-person Interactions</strong>
+            <p>Motions involving two or more people.</p>
+          </div>
+        </div>
+        <div class="unsupported-item">
+          <span class="unsupported-item__icon">❌</span>
+          <div>
+            <strong>Special Modes</strong>
+            <p>Seamless loop or in-place animations.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Example Prompts -->
+    <div class="examples-block">
+      <h3 class="examples-block__title"><span class="examples-block__icon">✨</span> Example Prompts</h3>
+      <div class="examples-list">
+        <div class="example-prompt">
+          <span class="example-prompt__num">01</span>
+          <p>A person performs a squat, then pushes a barbell overhead using the power from standing up.</p>
+        </div>
+        <div class="example-prompt">
+          <span class="example-prompt__num">02</span>
+          <p>A person climbs upward, moving up the slope.</p>
+        </div>
+        <div class="example-prompt">
+          <span class="example-prompt__num">03</span>
+          <p>A person stands up from the chair, then stretches their arms.</p>
+        </div>
+        <div class="example-prompt">
+          <span class="example-prompt__num">04</span>
+          <p>A person walks unsteadily, then slowly sits down.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ LIMITATIONS ═══════════════ -->
+  <section class="section reveal" id="limitations">
+    <span class="section__label">06 — Limitations</span>
+    <h2 class="section__title">Known Limitations</h2>
+    <p class="section__desc">Motion Gen is powerful, but understanding its boundaries will help you get the best results.</p>
+
+    <div class="limit-grid">
+      <div class="limit-item">
+        <strong>Addon Limitations</strong>
+        <p>Currently supports a single built-in SMPL-X character template. Custom character retargeting is not yet available. The addon requires a standalone Python 3.11 runtime (~3 GB) in addition to the model weights.</p>
+      </div>
+      <div class="limit-item">
+        <strong>Model Limitations</strong>
+        <p>The diffusion model generates humanoid motion only — no quadrupeds, no multi-character interaction, no finger/facial animation. Very long prompts or unusual descriptions may produce unpredictable results. Physics accuracy degrades past ~10 seconds of continuous motion.</p>
+      </div>
+      <div class="limit-item">
+        <strong>Hardware Constraints</strong>
+        <p>NVIDIA GPUs with at least 8 GB VRAM are required for real-time generation. CPU-only execution works but is 40–60× slower. AMD and Intel GPUs are not directly supported for accelerated inference.</p>
+      </div>
+      <div class="limit-item">
+        <strong>Prompt Sensitivity</strong>
+        <p>Results are highly dependent on prompt wording. Simple, descriptive sentences work best. The model responds better to concrete actions ("a person jumps over a box") than abstract concepts ("feeling happy").</p>
+      </div>
+      <div class="limit-item">
+        <strong>Platform Support</strong>
+        <p>The automated 1-click installer only works on Windows 10/11 (64-bit). macOS and Linux users must manually set up the Python environment via terminal.</p>
+      </div>
+      <div class="limit-item">
+        <strong>Generation Determinism</strong>
+        <p>Using a fixed seed produces consistent results on the same hardware. Different GPU architectures or CPU vs GPU may yield slightly different outputs for the same seed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ VERSIONS ═══════════════ -->
+  <section class="section reveal" id="versions">
+    <span class="section__label">07 — Version History</span>
+    <h2 class="section__title">Changelog</h2>
+
+    <table class="version-table">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Date</th>
+          <th>Highlights</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>v1.0</code></td>
+          <td>April 2026</td>
+          <td>Initial release — prompt-to-motion generation, SMPL-X auto-rigging, GPU + CPU fallback, manual model import, isolated Python 3.11 runtime, Draft &amp; Production quality modes.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════ LICENSES ═══════════════ -->
+  <section class="section reveal" id="licenses">
+    <span class="section__label">08 — Licenses</span>
+    <h2 class="section__title">Model &amp; Dependency Licenses</h2>
+    <p class="section__desc">Motion Gen bundles or depends on several open-source / open-weight models. Please review the respective licenses before commercial use.</p>
+
+    <div class="license-grid">
+      <div class="license-card">
+        <div>
+          <div class="license-card__name">HY-Motion 1.0</div>
+          <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">Tencent — Motion diffusion network (1B params)</div>
+        </div>
+        <span class="license-card__type">Tencent HY License</span>
+      </div>
+      <div class="license-card">
+        <div>
+          <div class="license-card__name">Qwen 3-8B GGUF</div>
+          <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">Alibaba / Unsloth — Language model for prompt translation</div>
+        </div>
+        <span class="license-card__type">Apache 2.0</span>
+      </div>
+      <div class="license-card">
+        <div>
+          <div class="license-card__name">CLIP ViT-L/14</div>
+          <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">OpenAI — Vision-language encoder for semantic alignment</div>
+        </div>
+        <span class="license-card__type">MIT</span>
+      </div>
+      <div class="license-card">
+        <div>
+          <div class="license-card__name">PyTorch</div>
+          <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">Meta — Deep learning framework</div>
+        </div>
+        <span class="license-card__type">BSD-3</span>
+      </div>
+      <div class="license-card">
+        <div>
+          <div class="license-card__name">llama-cpp-python</div>
+          <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">Andrei Betlen — GGUF inference binding</div>
+        </div>
+        <span class="license-card__type">MIT</span>
+      </div>
+    </div>
+
+    <div class="callout callout--info" style="margin-top:20px">
+      <span class="callout__icon">📄</span>
+      <div>For the full license text of each dependency, please visit the respective Hugging Face or GitHub repository linked in the addon source code.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <footer class="doc-footer">
+    <p>Motion Gen Blender Addon &middot; Built by <strong>haseebahmed295</strong> &middot; 2026</p>
+    <p style="margin-top:6px">Documentation generated for v1.0</p>
+  </footer>
+
+</div><!-- /.page-wrapper -->
+
+<!-- ═══════════════ SCROLL REVEAL ═══════════════ -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const reveals = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => io.observe(el));
+
+    // nav active highlight
+    const sections = document.querySelectorAll('section[id], header[id]');
+    const navLinks = document.querySelectorAll('.doc-nav a');
+    const navObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const link = document.querySelector(`.doc-nav a[href="#${e.target.id}"]`);
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    sections.forEach(s => navObs.observe(s));
+  });
+</script>
+</body>
+</html>

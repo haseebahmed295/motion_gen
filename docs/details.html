@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motion Gen &middot; Detailed Guide &amp; FAQ</title>
+  <meta name="description" content="In-depth guide, FAQ, troubleshooting, and OS compatibility for the Motion Gen Blender Addon." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="details.css" />
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="doc-nav" id="doc-nav">
+  <div class="doc-nav__inner">
+    <a href="index.html" class="nav-back">&larr; Main Docs</a>
+    <a href="#deep-dive">Deep Dive</a>
+    <a href="#os-compat">OS Support</a>
+    <a href="#faq">FAQ</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a href="#advanced">Advanced</a>
+    <a href="#glossary">Glossary</a>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- HERO -->
+  <header class="hero reveal" id="deep-dive">
+    <span class="hero__badge">📖 Detailed Guide</span>
+    <h1>Under the Hood</h1>
+    <p class="hero__sub">
+      Everything you need to know about Motion Gen's internals, cross-platform setup, common questions, and how to fix issues when things go wrong.
+    </p>
+  </header>
+
+  <!-- ═══════════════ PIPELINE DEEP DIVE ═══════════════ -->
+  <section class="section reveal" id="pipeline">
+    <span class="section__label">01 — Pipeline Architecture</span>
+    <h2 class="section__title">How Generation Works</h2>
+    <p class="section__desc">When you click <strong>Generate &amp; Load Motion</strong>, Motion Gen runs a multi-stage AI pipeline entirely on your local machine.</p>
+
+    <div class="pipeline-flow">
+      <div class="pipeline-step">
+        <span class="pipeline-step__num">1</span>
+        <div>
+          <h3>Prompt Translation</h3>
+          <p><strong>Qwen 3-8B</strong> (quantized GGUF) interprets your English prompt and converts it into a structured motion description the diffusion model understands. This runs on <strong>CPU / System RAM</strong> (~6 GB).</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <span class="pipeline-step__num">2</span>
+        <div>
+          <h3>Semantic Encoding</h3>
+          <p><strong>CLIP ViT-L/14</strong> encodes the structured description into a latent vector, aligning text semantics with motion space. Lightweight — runs on whichever device is available.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <span class="pipeline-step__num">3</span>
+        <div>
+          <h3>Motion Diffusion</h3>
+          <p>The <strong>HY-Motion 1B parameter</strong> diffusion network synthesises joint rotations and root translations frame-by-frame. This is the most compute-heavy step and benefits enormously from GPU acceleration.</p>
+        </div>
+      </div>
+      <div class="pipeline-step">
+        <span class="pipeline-step__num">4</span>
+        <div>
+          <h3>Rigging &amp; Import</h3>
+          <p>Generated motion data is mapped onto the bundled <strong>SMPL-X armature</strong>, imported into your scene with all keyframes baked — ready to render or retarget.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout--tip" style="margin-top:20px">
+      <span class="callout__icon">⚡</span>
+      <div><strong>Performance tip:</strong> Steps 1 &amp; 2 take ~5 seconds regardless of hardware. Step 3 is where GPU vs CPU makes the biggest difference — 10s on GPU vs 10+ minutes on CPU.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ OS COMPATIBILITY ═══════════════ -->
+  <section class="section reveal" id="os-compat">
+    <span class="section__label">02 — Platform Support</span>
+    <h2 class="section__title">OS Compatibility Guide</h2>
+    <p class="section__desc">Motion Gen is designed for Windows but works cross-platform with some manual setup.</p>
+
+    <div class="os-grid">
+      <!-- Windows -->
+      <div class="os-card os-card--primary">
+        <div class="os-card__header">
+          <span class="os-card__icon">🪟</span>
+          <div>
+            <h3>Windows 10 / 11</h3>
+            <span class="os-card__badge os-card__badge--full">Full Support</span>
+          </div>
+        </div>
+        <ul>
+          <li><strong>1-click installer</strong> handles Python runtime, PyTorch + CUDA, and all dependencies automatically</li>
+          <li>NVIDIA GPU acceleration works out of the box</li>
+          <li>Tested on Windows 10 21H2+ and Windows 11</li>
+          <li>Both <code>x86_64</code> architectures supported; ARM64 Windows is untested</li>
+        </ul>
+        <div class="os-card__verdict">✅ Recommended platform — zero manual steps required</div>
+      </div>
+
+      <!-- macOS -->
+      <div class="os-card">
+        <div class="os-card__header">
+          <span class="os-card__icon">🍎</span>
+          <div>
+            <h3>macOS (Intel &amp; Apple Silicon)</h3>
+            <span class="os-card__badge os-card__badge--partial">Partial — CPU Only</span>
+          </div>
+        </div>
+        <ul>
+          <li>The automated installer <strong>does not run</strong> on macOS — you must set up the Python environment manually via Terminal</li>
+          <li>No CUDA support; must enable <code>Force CPU</code> in addon preferences</li>
+          <li>Apple Silicon (M1/M2/M3/M4) machines need at least <strong>32 GB unified memory</strong></li>
+          <li>MPS (Metal) backend is <strong>not yet supported</strong> — all inference runs on CPU</li>
+          <li>Generation takes 10–15 minutes per animation</li>
+        </ul>
+        <h4>Manual Setup (macOS)</h4>
+        <div class="code-block">
+<pre><code># 1. Install Python 3.11 (if not installed)
+brew install python@3.11
+
+# 2. Create a venv inside the addon folder
+cd ~/Library/Application\ Support/Blender/4.2/scripts/addons/motion_gen
+python3.11 -m venv runtime
+
+# 3. Activate and install dependencies
+source runtime/bin/activate
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install transformers einops scipy llama-cpp-python
+
+# 4. Download models manually and place them:
+#    HY-Motion-1.0/latest.ckpt
+#    GGUF/Qwen3-8B-UD-Q5_K_XL.gguf</code></pre>
+        </div>
+      </div>
+
+      <!-- Linux -->
+      <div class="os-card">
+        <div class="os-card__header">
+          <span class="os-card__icon">🐧</span>
+          <div>
+            <h3>Linux (Ubuntu / Fedora / Arch)</h3>
+            <span class="os-card__badge os-card__badge--partial">Partial — Manual Setup</span>
+          </div>
+        </div>
+        <ul>
+          <li>Automated installer is Windows-only — <strong>manual terminal setup required</strong></li>
+          <li>NVIDIA GPUs with CUDA <strong>are supported</strong> if you install PyTorch with the correct CUDA index</li>
+          <li>AMD GPUs via ROCm are <strong>experimental and unsupported</strong> by this addon</li>
+          <li>Tested on Ubuntu 22.04 and Fedora 39</li>
+        </ul>
+        <h4>Manual Setup (Linux)</h4>
+        <div class="code-block">
+<pre><code># 1. Navigate to addon directory
+cd ~/.config/blender/4.2/scripts/addons/motion_gen
+
+# 2. Create venv
+python3.11 -m venv runtime
+
+# 3. Install with CUDA (NVIDIA) or CPU
+source runtime/bin/activate
+
+# For NVIDIA GPU:
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# For CPU only:
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+pip install transformers einops scipy llama-cpp-python
+
+# 4. Place model files in HY-Motion-1.0/ and GGUF/ directories</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout--warn" style="margin-top:20px">
+      <span class="callout__icon">⚠️</span>
+      <div><strong>Important:</strong> On all platforms, the Python venv folder <em>must</em> be named <code>runtime</code> and placed directly inside the addon root directory. The addon looks for <code>runtime/python.exe</code> (Windows) or <code>runtime/bin/python</code> (macOS/Linux).</div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════ FAQ ═══════════════ -->
+  <section class="section reveal" id="faq">
+    <span class="section__label">03 — FAQ</span>
+    <h2 class="section__title">Frequently Asked Questions</h2>
+    <p class="section__desc">Quick answers to the most common questions from users.</p>
+
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary><span class="faq-q">Is an internet connection required after setup?</span></summary>
+        <div class="faq-a"><p>No. After you download the models and install the runtime, everything runs 100% offline. Your prompts and generated data never leave your machine.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Can I use an AMD or Intel GPU for acceleration?</span></summary>
+        <div class="faq-a"><p>Not currently. The diffusion pipeline requires CUDA, which is NVIDIA-only. AMD users should enable <code>Force CPU</code> in addon preferences. ROCm and Intel oneAPI are not supported at this time.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Why does installation download ~3 GB of data?</span></summary>
+        <div class="faq-a"><p>The addon installs a full standalone Python 3.11 environment with PyTorch, CUDA runtime libraries, Transformers, and other ML dependencies. This ensures zero conflicts with Blender's built-in Python. The AI models (latest.ckpt + Qwen GGUF) add another ~7.6 GB on top.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Can I retarget the generated animation to my own character?</span></summary>
+        <div class="faq-a"><p>The addon currently imports motion onto its bundled SMPL-X armature only. However, you can use Blender's built-in retargeting tools or addons like <strong>Rokoko</strong> or <strong>Auto-Rig Pro</strong> to transfer the animation to your custom rig after generation.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">What's the maximum animation length?</span></summary>
+        <div class="faq-a"><p>The duration slider goes up to 30 seconds, but physics accuracy degrades noticeably past ~10 seconds. For best results, keep animations between 2–8 seconds and chain multiple generations together in Blender's NLA editor.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Can I generate animations for animals or non-human characters?</span></summary>
+        <div class="faq-a"><p>No. The HY-Motion model is trained exclusively on humanoid motion capture data. It can only produce single-person, bipedal human motion.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Does Draft Mode affect quality significantly?</span></summary>
+        <div class="faq-a"><p>Draft Mode (20 steps) is great for quickly testing a prompt idea — the overall motion shape will be correct but limb trajectories may be less smooth. For final renders, disable Draft Mode and use 50–60 steps.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Can I run multiple generations simultaneously?</span></summary>
+        <div class="faq-a"><p>No. The addon locks the Generate button while a generation is in progress. Running concurrent generations would exceed VRAM/RAM capacity and likely crash. Wait for the current generation to finish before starting another.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Will Motion Gen work with older Blender versions?</span></summary>
+        <div class="faq-a"><p>The addon requires Blender <strong>3.0 or higher</strong> (4.2+ recommended). Older versions have incompatible Python APIs and may fail during addon registration or FBX import.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span class="faq-q">Does the seed guarantee identical output?</span></summary>
+        <div class="faq-a"><p>A fixed seed produces consistent results on the <em>same hardware</em>. Switching between GPU and CPU, or between different GPU architectures (e.g., RTX 3060 vs RTX 4090), may yield slightly different results for the same seed due to floating-point precision differences.</p></div>
+      </details>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════ TROUBLESHOOTING ═══════════════ -->
+  <section class="section reveal" id="troubleshooting">
+    <span class="section__label">04 — Troubleshooting</span>
+    <h2 class="section__title">Common Issues &amp; Fixes</h2>
+    <p class="section__desc">Step-by-step solutions for the most reported problems.</p>
+
+    <div class="trouble-list">
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon red">✕</span>
+          <h3>"Python runtime not found" error</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> The standalone Python environment hasn't been installed, or the <code>runtime</code> folder was moved/deleted.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Open <strong>Edit → Preferences → Add-ons</strong></li>
+            <li>Find Motion Gen and expand the details</li>
+            <li>Click <strong>Install Python Runtime</strong></li>
+            <li>Wait for installation to complete (check <strong>Window → Toggle System Console</strong> for progress)</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon red">✕</span>
+          <h3>"No Armature returned from template" error</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> The bundled SMPL-X character FBX file is missing or corrupted.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Navigate to the addon folder and verify that <code>assets/wooden_models/boy_Rigging_smplx_tex.fbx</code> exists</li>
+            <li>If missing, re-download the addon zip and reinstall</li>
+            <li>Make sure the FBX Importer addon is enabled in Blender (<strong>Edit → Preferences → Add-ons → Import-Export: FBX format</strong>)</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon orange">⚠</span>
+          <h3>Blender freezes during generation</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> On 16 GB RAM systems, running Blender + the full ML pipeline can exhaust system memory.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Close all other applications (browsers, IDEs, game launchers)</li>
+            <li>If on CPU mode, ensure you have at least 32 GB RAM</li>
+            <li>Try reducing the animation duration</li>
+            <li>Check Task Manager — if RAM is at 95%+, you need more memory or must use a machine with a dedicated GPU</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon orange">⚠</span>
+          <h3>CUDA out of memory</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> Your GPU doesn't have enough VRAM for the diffusion model. Minimum is 8 GB.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Close GPU-heavy applications (games, other 3D software)</li>
+            <li>Reduce animation duration to 2–3 seconds</li>
+            <li>If your GPU has less than 8 GB VRAM, enable <code>Force CPU</code> in preferences</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon orange">⚠</span>
+          <h3>Generation produces jittery or glitchy motion</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> Usually a result of CFG Scale set too high, or an overly complex/ambiguous prompt.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Lower CFG Scale to 3.0–5.0</li>
+            <li>Simplify your prompt — focus on one clear action</li>
+            <li>Increase inference steps to 50+ (disable Draft Mode)</li>
+            <li>Try a different seed</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon red">✕</span>
+          <h3>ModuleNotFoundError: No module named 'einops' / 'torch'</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> The runtime environment was partially installed or corrupted.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Go to addon Preferences and click <strong>Reinstall / Repair Environment</strong></li>
+            <li>If the problem persists, delete the <code>runtime</code> folder entirely and reinstall from scratch</li>
+            <li>On Mac/Linux, manually activate the venv and run <code>pip install einops torch transformers scipy llama-cpp-python</code></li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-item__header">
+          <span class="trouble-item__icon orange">⚠</span>
+          <h3>Animation imports but character is invisible</h3>
+        </div>
+        <div class="trouble-item__body">
+          <p><strong>Cause:</strong> The character may have been imported at a very small scale or placed at an extreme location.</p>
+          <p><strong>Fix:</strong></p>
+          <ol>
+            <li>Press <code>Numpad .</code> to frame the selected object</li>
+            <li>Check the Outliner for the imported Armature and mesh objects</li>
+            <li>Ensure you're not in local view (<code>Numpad /</code> to toggle)</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════ ADVANCED ═══════════════ -->
+  <section class="section reveal" id="advanced">
+    <span class="section__label">05 — Advanced Usage</span>
+    <h2 class="section__title">Power User Tips</h2>
+    <p class="section__desc">Techniques for getting the most out of Motion Gen.</p>
+
+    <div class="adv-grid">
+      <div class="adv-card">
+        <h3>🔗 Chaining Animations</h3>
+        <p>Generate multiple short (2–4s) animations and blend them using Blender's <strong>NLA Editor</strong>. This produces better results than a single long generation, since physics degrade past ~10s.</p>
+      </div>
+      <div class="adv-card">
+        <h3>🎲 Seed Hunting</h3>
+        <p>Use <strong>Draft Mode</strong> with different seeds to rapidly explore variations. Once you find a motion you like, note the seed, disable Draft, and regenerate at full quality (50–60 steps).</p>
+      </div>
+      <div class="adv-card">
+        <h3>🎚 CFG Scale Tuning</h3>
+        <p><strong>Low CFG (2–3):</strong> Natural, flowing motion with some creative freedom. <strong>Medium (4–5):</strong> Balanced adherence. <strong>High (6–7):</strong> Strict prompt following but may sacrifice fluidity. <strong>Above 8:</strong> Likely to introduce jitter — avoid.</p>
+      </div>
+      <div class="adv-card">
+        <h3>📝 Prompt Engineering</h3>
+        <p>Start with a base action ("a person walks"), then add modifiers one at a time ("a person walks slowly", "a person walks slowly while limping"). This iterative approach gives you fine control.</p>
+      </div>
+      <div class="adv-card">
+        <h3>🦴 Retargeting Workflow</h3>
+        <p>After generating, use Blender's <strong>Copy Transforms</strong> constraints or an addon like Auto-Rig Pro to transfer the SMPL-X animation onto your custom character rig.</p>
+      </div>
+      <div class="adv-card">
+        <h3>💾 Batch Generation</h3>
+        <p>You can script batch generation via Blender's Python console by calling <code>bpy.ops.hymotion.generate_and_load()</code> with different scene property values — useful for generating motion libraries.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════ GLOSSARY ═══════════════ -->
+  <section class="section reveal" id="glossary">
+    <span class="section__label">06 — Reference</span>
+    <h2 class="section__title">Glossary</h2>
+    <p class="section__desc">Key terms used throughout this documentation.</p>
+
+    <div class="glossary-list">
+      <div class="glossary-item"><strong>SMPL-X</strong><p>A parametric 3D body model that represents the human body with a skeleton and surface mesh. Used as the character template for generated animations.</p></div>
+      <div class="glossary-item"><strong>Diffusion Model</strong><p>A type of generative AI that creates data by iteratively removing noise from a random starting point. Motion Gen's core network generates motion data this way.</p></div>
+      <div class="glossary-item"><strong>GGUF</strong><p>A file format for quantized large language models. The Qwen 3-8B model is stored in this format to reduce memory usage while maintaining quality.</p></div>
+      <div class="glossary-item"><strong>CFG Scale</strong><p>Classifier-Free Guidance — controls how strongly the generated output follows the text prompt versus allowing natural physics to dominate.</p></div>
+      <div class="glossary-item"><strong>CLIP</strong><p>Contrastive Language-Image Pre-training — an OpenAI model that bridges text and visual semantics. Used here to encode prompt meaning into a vector the diffusion model understands.</p></div>
+      <div class="glossary-item"><strong>Inference Steps</strong><p>The number of denoising iterations the diffusion model performs. More steps = smoother, more accurate motion at the cost of speed.</p></div>
+      <div class="glossary-item"><strong>VRAM</strong><p>Video RAM — dedicated memory on your GPU. The motion diffusion model requires at least 8 GB VRAM for GPU-accelerated generation.</p></div>
+      <div class="glossary-item"><strong>NLA Editor</strong><p>Blender's Non-Linear Animation editor — allows you to blend, layer, and sequence animation clips.</p></div>
+    </div>
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer class="doc-footer">
+    <p><a href="index.html">&larr; Back to Main Documentation</a></p>
+    <p style="margin-top:10px">Motion Gen Blender Addon &middot; Built by <strong>haseebahmed295</strong> &middot; 2026</p>
+  </footer>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const reveals = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => io.observe(el));
+
+    const sections = document.querySelectorAll('section[id], header[id]');
+    const navLinks = document.querySelectorAll('.doc-nav a');
+    const navObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const link = document.querySelector(`.doc-nav a[href="#${e.target.id}"]`);
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    sections.forEach(s => navObs.observe(s));
+
+    // FAQ toggle animation
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('toggle', () => {
+        if (item.open) {
+          const a = item.querySelector('.faq-a');
+          a.style.maxHeight = '0';
+          requestAnimationFrame(() => { a.style.maxHeight = a.scrollHeight + 'px'; });
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>
