@@ -327,6 +327,90 @@
     </div>
   </section>
 
+  <!-- ═══════════════ RETARGETING GUIDE ═══════════════ -->
+  <section class="section reveal" id="retargeting">
+    <span class="section__label">04c — Retargeting</span>
+    <h2 class="section__title">🦴 Retarget to Your Own Character</h2>
+    <p class="section__desc">Motion Gen generates animation onto a built-in SMPL-X armature. To transfer that animation to your own custom character, use <a href="https://blendermarket.com/products/auto-rig-pro" target="_blank">Auto-Rig Pro</a>'s <strong>Remap</strong> tool. Here's a step-by-step walkthrough.</p>
+
+    <div class="callout callout--info" style="margin-bottom:24px">
+      <span class="callout__icon">📦</span>
+      <div><strong>Prerequisite:</strong> You need the <a href="https://blendermarket.com/products/auto-rig-pro" target="_blank">Auto-Rig Pro</a> addon installed in Blender. The Remap feature is included with the addon. Full official docs: <a href="https://lucky3d.fr/auto-rig-pro/doc/remap_doc.html" target="_blank">ARP Remap Documentation</a></div>
+    </div>
+
+    <div class="steps">
+      <!-- Step 1 -->
+      <div class="step" data-step="1">
+        <h3>Generate Your Animation</h3>
+        <p>Use Motion Gen as usual — type your prompt, adjust settings, and click <strong>Generate &amp; Load Motion</strong>. This creates a rigged SMPL-X character with baked keyframes in your scene. This will be the <strong>Source</strong> armature.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step" data-step="2">
+        <h3>Import or Prepare Your Target Character</h3>
+        <ul>
+          <li>Ensure your custom rigged character (the <strong>Target</strong> armature) is in the same scene.</li>
+          <li>It can be any type of armature — Auto-Rig Pro, Rigify, or a custom rig.</li>
+          <li><strong>Important:</strong> Zero out the armature object's Location and Rotation. Press <code>Alt+G</code> and <code>Alt+R</code>, or manually set them to zero in the N-panel.</li>
+        </ul>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" data-step="3">
+        <h3>Open the Remap Panel</h3>
+        <ul>
+          <li>Go to the <strong>3D Viewport → Sidebar (N-panel) → ARP Tab → Remap</strong>.</li>
+          <li>Select the Motion Gen SMPL-X armature and click the <strong>Source</strong> field to assign it.</li>
+          <li>Select your custom character armature and click the <strong>Target</strong> field to assign it.</li>
+          <li>Click <strong>Auto-Scale</strong> to match the source armature's scale to the target, or manually scale with <code>S</code>.</li>
+        </ul>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step" data-step="4">
+        <h3>Build &amp; Configure the Bones List</h3>
+        <ul>
+          <li>Click <strong>Build Bones List</strong> to populate the mapping.</li>
+          <li>If your target is an Auto-Rig Pro armature, you can load a <strong>built-in preset</strong> (Mixamo, Rokoko, etc.) using the dropdown arrow button.</li>
+          <li>Otherwise, manually map each source bone to its corresponding target bone. Tedious but straightforward — match hips→hips, spine→spine, etc.</li>
+          <li>Mark the root bone (typically hips/pelvis) with <strong>Set as Root</strong> — this enables translation + rotation retargeting for that bone.</li>
+        </ul>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step" data-step="5">
+        <h3>Match Rest Poses</h3>
+        <ul>
+          <li>Both armatures must face the <strong>same direction</strong> in rest pose. Enter <strong>Edit Mode</strong> (<code>Tab</code>) on each to verify.</li>
+          <li>If the rest poses differ (e.g. A-pose vs T-pose), click <strong>Redefine Rest Pose</strong> on the source armature.</li>
+          <li>Tick the <strong>Preserve</strong> checkbox to keep the armature untouched while saving a new internal rest pose.</li>
+          <li>Select mismatched bones (arms, legs) and click <strong>Copy Selected Bones Rotation</strong> to auto-align them to the target's orientation.</li>
+          <li>Click <strong>Apply</strong> when done.</li>
+        </ul>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="step" data-step="6">
+        <h3>Retarget!</h3>
+        <ul>
+          <li>Click <strong>Re-Target</strong> to transfer the animation.</li>
+          <li>If proportions differ significantly, use <strong>Interactive Tweaks</strong> to adjust bone positions and rotations after retargeting.</li>
+          <li>For example: if the pelvis is too high, select it in the bones list, set an <strong>Additive Location</strong> value, and click the appropriate axis button.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--tip" style="margin-top:24px">
+      <span class="callout__icon">💡</span>
+      <div><strong>Tip:</strong> Once you've created a working bone mapping for your character, <strong>export it as a preset</strong> using the export button in the Remap panel. This way you can instantly retarget future Motion Gen animations without re-mapping every time.</div>
+    </div>
+
+    <div class="callout callout--warn" style="margin-top:12px">
+      <span class="callout__icon">⚠️</span>
+      <div><strong>Note:</strong> Interactive Tweaks currently only work with <strong>Euler rotation mode</strong>. If your target rig uses Quaternions, select all bones in Pose Mode and <code>Alt+Click</code> the rotation mode to switch all bones to XYZ Euler before tweaking.</div>
+    </div>
+  </section>
+
   <!-- ═══════════════ PROMPTING GUIDE ═══════════════ -->
   <section class="section reveal" id="prompting">
     <span class="section__label">05 — Prompting Guide</span>
