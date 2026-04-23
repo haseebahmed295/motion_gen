@@ -9,22 +9,6 @@
 </head>
 <body>
 
-<!-- ═══════════════════════ NAV ═══════════════════════ -->
-<nav class="doc-nav" id="doc-nav">
-  <div class="doc-nav__inner">
-    <a href="#overview">Overview</a>
-    <a href="#features">Features</a>
-    <a href="#requirements">Requirements</a>
-    <a href="#installation">Installation</a>
-    <a href="#ui-guide">UI Guide</a>
-    <a href="#prompting">Prompting</a>
-    <a href="#limitations">Limitations</a>
-    <a href="#versions">Versions</a>
-    <a href="#licenses">Licenses</a>
-    <a href="details.html" style="border-left:1px solid var(--border-subtle);padding-left:18px;margin-left:6px">Details &amp; FAQ →</a>
-  </div>
-</nav>
-
 <div class="page-wrapper">
 
   <!-- ═══════════════════════ HERO ═══════════════════════ -->
@@ -559,19 +543,20 @@
     }, { threshold: 0.12 });
     reveals.forEach(el => io.observe(el));
 
-    // nav active highlight
-    const sections = document.querySelectorAll('section[id], header[id]');
-    const navLinks = document.querySelectorAll('.doc-nav a');
-    const navObs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          navLinks.forEach(l => l.classList.remove('active'));
-          const link = document.querySelector(`.doc-nav a[href="#${e.target.id}"]`);
-          if (link) link.classList.add('active');
-        }
-      });
-    }, { rootMargin: '-40% 0px -55% 0px' });
-    sections.forEach(s => navObs.observe(s));
+    // iframe mode: hide scrollbar + send height to parent
+    if (window.self !== window.top) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      const s = document.createElement('style');
+      s.textContent = 'html::-webkit-scrollbar, body::-webkit-scrollbar { display:none } html,body { scrollbar-width:none; -ms-overflow-style:none }';
+      document.head.appendChild(s);
+      function postHeight() {
+        window.parent.postMessage({ type:'iframe-height', height: document.body.scrollHeight }, '*');
+      }
+      postHeight();
+      new ResizeObserver(postHeight).observe(document.body);
+      window.addEventListener('load', postHeight);
+    }
   });
 </script>
 </body>

@@ -64,7 +64,7 @@ body::before{
 .page-wrapper{
   max-width: 920px;
   margin: 0 auto;
-  padding: 60px 28px 120px;
+  padding: 20px 28px 120px;
 }
 
 /* ── Navigation ──────────────────────────── */

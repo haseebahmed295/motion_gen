@@ -10,19 +10,6 @@
 </head>
 <body>
 
-<!-- NAV -->
-<nav class="doc-nav" id="doc-nav">
-  <div class="doc-nav__inner">
-    <a href="index.html" class="nav-back">&larr; Main Docs</a>
-    <a href="#deep-dive">Deep Dive</a>
-    <a href="#os-compat">OS Support</a>
-    <a href="#faq">FAQ</a>
-    <a href="#troubleshooting">Troubleshooting</a>
-    <a href="#advanced">Advanced</a>
-    <a href="#glossary">Glossary</a>
-  </div>
-</nav>
-
 <div class="page-wrapper">
 
   <!-- HERO -->
@@ -440,19 +427,6 @@ pip install transformers einops scipy llama-cpp-python
     }, { threshold: 0.12 });
     reveals.forEach(el => io.observe(el));
 
-    const sections = document.querySelectorAll('section[id], header[id]');
-    const navLinks = document.querySelectorAll('.doc-nav a');
-    const navObs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          navLinks.forEach(l => l.classList.remove('active'));
-          const link = document.querySelector(`.doc-nav a[href="#${e.target.id}"]`);
-          if (link) link.classList.add('active');
-        }
-      });
-    }, { rootMargin: '-40% 0px -55% 0px' });
-    sections.forEach(s => navObs.observe(s));
-
     // FAQ toggle animation
     document.querySelectorAll('.faq-item').forEach(item => {
       item.addEventListener('toggle', () => {
@@ -463,6 +437,21 @@ pip install transformers einops scipy llama-cpp-python
         }
       });
     });
+
+    // iframe mode: hide scrollbar + send height to parent
+    if (window.self !== window.top) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      const s = document.createElement('style');
+      s.textContent = 'html::-webkit-scrollbar, body::-webkit-scrollbar { display:none } html,body { scrollbar-width:none; -ms-overflow-style:none }';
+      document.head.appendChild(s);
+      function postHeight() {
+        window.parent.postMessage({ type:'iframe-height', height: document.body.scrollHeight }, '*');
+      }
+      postHeight();
+      new ResizeObserver(postHeight).observe(document.body);
+      window.addEventListener('load', postHeight);
+    }
   });
 </script>
 </body>
