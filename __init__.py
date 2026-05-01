@@ -139,6 +139,11 @@ class HYMOTION_OT_generate(bpy.types.Operator):
             return {'CANCELLED'}
 
         props = context.scene.hy_motion_props
+        prefs = context.preferences.addons[__name__].preferences
+
+        if not prefs.accept_licenses:
+            self.report({'ERROR'}, "You must accept the licenses in the panel first.")
+            return {'CANCELLED'}
         
         # Get addon dir
         import platform
@@ -307,6 +312,11 @@ class HYMOTION_OT_install_runtime(bpy.types.Operator):
             self.report({'WARNING'}, "Installation is already running...")
             return {'CANCELLED'}
             
+        prefs = context.preferences.addons[__name__].preferences
+        if not prefs.accept_licenses:
+            self.report({'ERROR'}, "You must accept the licenses in the preferences first.")
+            return {'CANCELLED'}
+
         addon_dir = os.path.dirname(os.path.realpath(__file__))
         install_script = os.path.join(addon_dir, "install_env.py")
         blender_python = sys.executable
@@ -392,6 +402,10 @@ class HYMOTION_OT_import_models(bpy.types.Operator):
 
     def execute(self, context):
         prefs = context.preferences.addons[__name__].preferences
+        if not prefs.accept_licenses:
+            self.report({'ERROR'}, "You must accept the licenses in the preferences first.")
+            return {'CANCELLED'}
+
         addon_dir = os.path.dirname(os.path.realpath(__file__))
         
         ckpt_src = bpy.path.abspath(prefs.source_ckpt_path)
@@ -426,6 +440,12 @@ class HYMotionPreferences(bpy.types.AddonPreferences):
         default=False
     )
     
+    accept_licenses: bpy.props.BoolProperty(
+        name="I accept the Third-Party Licenses",
+        description="You must accept the Tencent HY-Motion and Qwen/Llama licenses to use this add-on",
+        default=False
+    )
+    
     source_ckpt_path: bpy.props.StringProperty(
         name="Select latest.ckpt",
         description="Path to the downloaded latest.ckpt file",
@@ -442,6 +462,23 @@ class HYMotionPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
+
+        # --- Legal Agreement ---
+        legal_box = layout.box()
+        legal_box.label(text="⚠️ Legal Requirement", icon='ERROR')
+        legal_box.label(text="This add-on downloads restricted AI models.")
+        legal_box.label(text="You are bound by the Tencent and Qwen License terms.")
+        
+        row = legal_box.row(align=True)
+        row.operator("wm.url_open", text="Tencent License", icon='URL').url = "https://huggingface.co/tencent/HY-Motion-1.0/blob/main/LICENSE.txt"
+        row.operator("wm.url_open", text="Qwen License", icon='URL').url = "https://github.com/QwenLM/Qwen/blob/main/LICENSE"
+        
+        legal_box.prop(self, "accept_licenses")
+        
+        if not self.accept_licenses:
+            legal_box.label(text="Please accept the licenses to enable setup and generation.", icon='INFO')
+            return # Block rest of preferences if not accepted
+
         box = layout.box()
         box.label(text="Local Setup", icon='PREFERENCES')
         box.prop(self, "force_cpu")
@@ -574,6 +611,21 @@ class HYMOTION_PT_main_panel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         props = scene.hy_motion_props
+
+        # --- Legal Check ---
+        prefs = context.preferences.addons[__name__].preferences
+        if not prefs.accept_licenses:
+            box = layout.box()
+            box.label(text="⚠️ License Agreement Required", icon='ERROR')
+            box.label(text="Tencent HY-Motion & Qwen Licenses")
+            box.label(text="must be accepted to continue.")
+            
+            row = box.row(align=True)
+            row.operator("wm.url_open", text="Review Tencent", icon='URL').url = "https://huggingface.co/tencent/HY-Motion-1.0/blob/main/LICENSE.txt"
+            row.operator("wm.url_open", text="Review Qwen", icon='URL').url = "https://github.com/QwenLM/Qwen/blob/main/LICENSE"
+            
+            box.prop(prefs, "accept_licenses")
+            return
 
         # --- Prompt Section ---
         box = layout.box()

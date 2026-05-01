@@ -38,6 +38,16 @@
     <p class="section__desc">
       The result is automatically mapped onto a built-in SMPL-X character armature and imported into your Blender scene — ready to render, retarget, or refine. The entire process runs locally on your machine; no cloud API, no subscription, no internet required after initial setup.
     </p>
+
+    <div class="callout callout--info" style="margin-top:20px">
+      <span class="callout__icon">📢</span>
+      <div>
+        <strong>Public Disclosure:</strong> 
+        This add-on connects to external services (PyPI and Hugging Face) to download required open-source AI weights and Python libraries. Specifically, it requires downloading two large-scale AI models: <strong>Tencent HY-Motion 1.0</strong> and <strong>Qwen 3-8B</strong>. 
+        <br><br>
+        Users must explicitly agree to the <a href="https://huggingface.co/tencent/HY-Motion-1.0/blob/main/LICENSE.txt" target="_blank">Tencent Community License</a> and the <a href="https://github.com/QwenLM/Qwen/blob/main/LICENSE" target="_blank">Qwen License</a> via the in-Blender setup panel before these models can be downloaded or used. No data is sent without explicit user input.
+      </div>
+    </div>
   </section>
 
 
@@ -562,9 +572,9 @@
 
   <!-- ═══════════════ LICENSES ═══════════════ -->
   <section class="section reveal" id="licenses">
-    <span class="section__label">08 — Licenses</span>
+    <span class="section__label">08 — Licenses &amp; Legal</span>
     <h2 class="section__title">Model &amp; Dependency Licenses</h2>
-    <p class="section__desc">Motion Gen bundles or depends on several open-source / open-weight models. Please review the respective licenses before commercial use.</p>
+    <p class="section__desc">Motion Gen orchestrates several third-party AI models. Use of this addon requires explicit agreement to the following licenses via the in-Blender "Click-Wrap" agreement.</p>
 
     <div class="license-grid">
       <div class="license-card">
@@ -572,14 +582,14 @@
           <div class="license-card__name">HY-Motion 1.0</div>
           <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">Tencent — Motion diffusion network (1B params)</div>
         </div>
-        <span class="license-card__type">Tencent HY License</span>
+        <a href="https://huggingface.co/tencent/HY-Motion-1.0/blob/main/LICENSE.txt" target="_blank" class="license-card__type">Tencent Community License</a>
       </div>
       <div class="license-card">
         <div>
           <div class="license-card__name">Qwen 3-8B GGUF</div>
           <div style="color:var(--text-secondary);font-size:.82rem;margin-top:2px">Alibaba / Unsloth — Language model for prompt translation</div>
         </div>
-        <span class="license-card__type">Apache 2.0</span>
+        <a href="https://github.com/QwenLM/Qwen/blob/main/LICENSE" target="_blank" class="license-card__type">Qwen License</a>
       </div>
       <div class="license-card">
         <div>
@@ -604,9 +614,12 @@
       </div>
     </div>
 
-    <div class="callout callout--info" style="margin-top:20px">
-      <span class="callout__icon">📄</span>
-      <div>For the full license text of each dependency, please visit the respective Hugging Face or GitHub repository linked in the addon source code.</div>
+    <div class="callout callout--warn" style="margin-top:24px">
+      <span class="callout__icon">⚖️</span>
+      <div>
+        <strong>Legal Disclaimer:</strong> 
+        The Motion Gen addon acts as a downloader and local interface for third-party AI models. The developers do not distribute the model weights directly. By using the automated setup script, you are entering into a direct legal agreement with the respective model creators (Tencent, Alibaba/Qwen). The "Click-Wrap" agreement inside the Blender UI must be accepted before any third-party software is downloaded or executed.
+      </div>
     </div>
   </section>
 
