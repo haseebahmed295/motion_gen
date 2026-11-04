@@ -6,23 +6,37 @@ Generate 3D motion from text prompts directly within Blender using the HY-Motion
 - **Prompt-to-Motion:** Describe an animation (e.g., "A person doing a backflip") and generate it in seconds.
 - **Isolated ML Runtime:** Uses a standalone Python environment to ensure it doesn't conflict with Blender's internal dependencies.
 - **Auto-Rigging:** Automatically applies the generated motion data to a character armature.
+- **Hardware Acceleration:** Supports NVIDIA CUDA on Windows and native Metal Performance Shaders (MPS) / Metal GPU on Apple Silicon Macs.
+
+## System Requirements
+
+| Platform | Recommended Specs | Minimum Specs |
+| :--- | :--- | :--- |
+| **macOS (Apple Silicon)** | M1/M2/M3/M4, **24 GB+ Unified Memory**, macOS 12+ | M1/M2, **16 GB Unified Memory** (close heavy apps) |
+| **Windows 10 / 11** | NVIDIA RTX 3060+ (8 GB+ VRAM), 32 GB RAM | NVIDIA GTX/RTX (8 GB VRAM), 16 GB RAM |
 
 ## Installation Guide
 
 ### Step 1: Install the Addon in Blender
-1. Download the `motion_gen.zip` file (do not extract it).
+1. Download the addon `.zip` file for your platform:
+   - **For macOS (Apple Silicon M1/M2/M3/M4):** `motion_gen-macos-arm64.zip` (or universal `motion_gen.zip`)
+   - **For Windows:** `motion_gen.zip`
 2. Open Blender (version 4.2.0 or higher recommended).
-3. Go to **Edit > Preferences > Add-ons**.
-4. Click on the **Install...** button at the top right.
-5. Locate and select the `motion_gen.zip` file, then click **Install Add-on**.
-6. Enable the addon by checking the box next to **Animation: Motion Gen**.
+3. Go to **Edit > Preferences > Add-ons** (or **Get Extensions > Install from Disk...** in Blender 4.2+).
+4. Locate and select the downloaded `.zip` file, then click **Install Add-on**.
+5. Enable the addon by checking the box next to **Animation: Motion Gen**.
 
 ### Step 2: Install the HY-Motion Backend
 1. Once enabled, expand the addon details by clicking the arrow next to its name.
 2. In the **Local Setup** section, you will see the status of the Python runtime environment.
-3. Click the **Install Python Runtime** (or **Install HY-Motion Backend**) button. This will configure a standalone Python instance just for the addon.
-4. Wait for the installation to finish. You can check the Blender system console (`Window > Toggle System Console`) for progress.
+3. Click the **Install Python Runtime** (or **Install HY-Motion Backend**) button:
+   - **On macOS (Apple Silicon):** Automatically deploys a standalone Python 3.11 environment with native PyTorch (MPS GPU) and the bundled Metal-accelerated `llama-cpp-python` wheel.
+   - **On Windows:** Automatically deploys Python 3.11 with CUDA GPU acceleration.
+4. Wait for the installation to finish. You can check the Blender system console (`Window > Toggle System Console` on Windows, or launch Blender from Terminal on macOS) for progress.
 5. Wait until the status says **Runtime and Dependencies Installed!**.
+
+> [!TIP]
+> **macOS Build Tools Fallback:** A pre-compiled Apple Silicon Metal wheel is bundled with the Mac release. If you ever need to rebuild dependencies from source on macOS, ensure you have Xcode Command Line Tools (`xcode-select --install`) and CMake (`brew install cmake`) installed.
 
 ### Step 3: Download & Import AI Models
 Due to their large size, the AI models must be downloaded separately.

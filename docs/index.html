@@ -81,7 +81,7 @@
       <div class="feature-card">
         <div class="feature-card__icon red">🖥</div>
         <h3>GPU + CPU Fallback</h3>
-        <p>Optimised for NVIDIA GPUs with CUDA, but includes a "Force CPU" toggle for AMD, Intel, and Apple Silicon users — or anyone without a dedicated GPU.</p>
+        <p>Optimised for NVIDIA GPUs with CUDA and Apple Silicon (M1–M4) with Metal/MPS acceleration, plus a "Force CPU" fallback for systems without GPU acceleration.</p>
       </div>
       <div class="feature-card">
         <div class="feature-card__icon orange">🔒</div>
@@ -137,7 +137,7 @@
       <ul class="spec-list">
         <li>
           <span class="label">OS</span>
-          <span class="value">Windows 10 or 11 (64-bit) for the automated 1-click installer. Mac and Linux are supported but require manual terminal setup.</span>
+          <span class="value">Windows 10/11 (64-bit) and macOS (Apple Silicon M1/M2/M3/M4) for the automated 1-click installer. Linux and Intel Mac require manual terminal setup.</span>
         </li>
         <li>
           <span class="label">Host Software</span>
@@ -159,20 +159,20 @@
       <!-- Tier 1 -->
       <div class="tier-card tier-card--recommended">
         <span class="tier-card__badge">Tier 1 — Recommended</span>
-        <h3>With Dedicated GPU</h3>
-        <p class="tier-card__sub">Uses dual-hardware architecture: System RAM for text translation, GPU for 3D physics rendering.</p>
+        <h3>GPU Accelerated (NVIDIA / Apple Silicon)</h3>
+        <p class="tier-card__sub">Accelerated inference via NVIDIA CUDA on Windows or Apple Silicon Metal/MPS on macOS.</p>
         <ul class="spec-list">
-          <li><span class="label">GPU</span><span class="value">NVIDIA GPU strictly required.</span></li>
-          <li><span class="label">Min VRAM</span><span class="value">8 GB (e.g. RTX 2060 Super, RTX 2080, RTX 3060).</span></li>
-          <li><span class="label">RAM</span><span class="value">16 GB minimum (32 GB recommended). With 16 GB, close heavy background apps before generating.</span></li>
-          <li><span class="label">CPU</span><span class="value">Modern multi-core (Intel i5 / AMD Ryzen 5 or better).</span></li>
-          <li><span class="label">Render Time</span><span class="value">~15 seconds for a standard animation.</span></li>
+          <li><span class="label">GPU</span><span class="value">NVIDIA GPU (CUDA) or Apple Silicon M1/M2/M3/M4 (Metal/MPS).</span></li>
+          <li><span class="label">Min VRAM / RAM</span><span class="value">8 GB VRAM (Windows) or 16 GB Unified Memory (macOS). 24 GB+ strongly recommended.</span></li>
+          <li><span class="label">System RAM</span><span class="value">16 GB minimum (32 GB recommended on Windows). Close heavy apps before generating.</span></li>
+          <li><span class="label">CPU</span><span class="value">Modern multi-core processor.</span></li>
+          <li><span class="label">Render Time</span><span class="value">~15–30 seconds for a standard animation.</span></li>
         </ul>
       </div>
       <!-- Tier 2 -->
       <div class="tier-card tier-card--fallback">
         <span class="tier-card__badge">Tier 2 — Fallback</span>
-        <h3>No GPU / Mac / AMD</h3>
+        <h3>CPU Only / Intel Mac / AMD</h3>
         <p class="tier-card__sub">Enable the <code>Force CPU</code> toggle. Entire multi-model pipeline runs in System RAM.</p>
         <ul class="spec-list">
           <li><span class="label">GPU</span><span class="value">None required.</span></li>
@@ -202,7 +202,7 @@
       <div class="step" data-step="1">
         <h3>Install the Addon in Blender</h3>
         <ul>
-          <li>Download the <code>motion_gen.zip</code> file (do <strong>not</strong> extract it).</li>
+          <li>Download the addon zip file: <code>motion_gen-macos-arm64.zip</code> for Apple Silicon Mac or <code>motion_gen.zip</code> for Windows.</li>
           <li>Open Blender (version 4.2.0 or higher recommended).</li>
           <li>Go to <strong>Edit → Preferences → Add-ons</strong>.</li>
           <li>Click <strong>Install…</strong> at the top right.</li>
@@ -218,7 +218,7 @@
         <ul>
           <li>Once enabled, expand the addon details by clicking the arrow next to its name.</li>
           <li>In the <strong>Local Setup</strong> section, you will see the status of the Python runtime environment.</li>
-          <li>Click <strong>Install Python Runtime</strong> (or <strong>Install Motion Gen Backend</strong>). This will configure a standalone Python instance just for the addon.</li>
+          <li>Click <strong>Install Python Runtime</strong> (or <strong>Install Motion Gen Backend</strong>). This automatically configures a standalone Python instance with CUDA (Windows) or native Metal/MPS acceleration (Apple Silicon macOS).</li>
           <li>Wait for the installation to finish. You can check the Blender system console (<strong>Window → Toggle System Console</strong>) for progress.</li>
           <li>Wait until the status says <strong>Runtime and Dependencies Installed!</strong></li>
         </ul>
@@ -538,7 +538,7 @@
       </div>
       <div class="limit-item">
         <strong>Platform Support</strong>
-        <p>The automated 1-click installer only works on Windows 10/11 (64-bit). macOS and Linux users must manually set up the Python environment via terminal.</p>
+        <p>The automated 1-click installer is supported on Windows 10/11 (64-bit) and macOS (Apple Silicon arm64). Linux and Intel Mac users can use manual setup.</p>
       </div>
       <div class="limit-item">
         <strong>Generation Determinism</strong>

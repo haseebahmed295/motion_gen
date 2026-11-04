@@ -12,11 +12,8 @@ def get_module_device(module: nn.Module) -> torch.device:
         torch.device: The device of the module.
     """
     try:
-        next(module.parameters())
+        p = next(module.parameters())
     except StopIteration:
         raise ValueError("The input module should contain parameters.")
 
-    if next(module.parameters()).is_cuda:
-        return torch.device(next(module.parameters()).get_device())
-
-    return torch.device("cpu")
+    return p.device

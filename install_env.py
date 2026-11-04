@@ -4,6 +4,23 @@ import urllib.request
 import zipfile
 import subprocess
 import platform
+import shutil
+
+def check_mac_build_tools():
+    """Checks if macOS has the necessary toolchain to build C++ extensions from source."""
+    issues = []
+    
+    # Check Xcode Command Line Tools
+    try:
+        subprocess.run(["xcode-select", "-p"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        issues.append("Xcode Command Line Tools missing (run 'xcode-select --install' in Terminal)")
+        
+    # Check CMake
+    if not shutil.which("cmake"):
+        issues.append("CMake not found in PATH (install via 'brew install cmake')")
+        
+    return issues
 
 def reporthook(count, block_size, total_size):
     if count % 1000 == 0:
@@ -58,7 +75,7 @@ def install_standalone_python():
         python_exe = os.path.join(runtime_dir, "python", "bin", "python3")
         pip_exe = os.path.join(runtime_dir, "python", "bin", "pip3")
         
-        if not os.path.exists(python_exe):
+        if not os.path.exists(python_exe) and not os.path.exists(os.path.join(runtime_dir, "bin", "python3")):
             os.makedirs(runtime_dir, exist_ok=True)
             if os_name == "Darwin":
                 if "arm" in arch or "aarch" in arch:
@@ -79,10 +96,18 @@ def install_standalone_python():
                 tar_ref.extractall(runtime_dir)
             os.remove(py_tar_path)
             
-            # Ensure it's executable
+        # Support both nested (runtime/python/bin/python3) and flat (runtime/bin/python3)
+        if not os.path.exists(python_exe):
+            alt_py = os.path.join(runtime_dir, "bin", "python3")
+            if os.path.exists(alt_py):
+                python_exe = alt_py
+                pip_exe = os.path.join(runtime_dir, "bin", "pip3")
+                
+        # Ensure binaries are executable
+        if os.path.exists(python_exe):
             os.chmod(python_exe, 0o755)
-            if os.path.exists(pip_exe):
-                os.chmod(pip_exe, 0o755)
+        if os.path.exists(pip_exe):
+            os.chmod(pip_exe, 0o755)
                 
         if not os.path.exists(pip_exe):
             print("Bootstrapping PIP...")
@@ -96,8 +121,8 @@ def install_standalone_python():
     torch_cmd = [pip_exe, "install"] + torch_deps + ["--no-warn-script-location"]
     
     if os_name != "Darwin":
-        # Force CUDA 12.4 on Windows/Linux
-        torch_cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu124"])
+        # Force CUDA on Windows/Linux
+        torch_cmd.extend(["--index-url", "https://download.pytorch.org/whl/cu130"])
     
     proc1 = subprocess.Popen(torch_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding='utf-8', errors='replace')
     for line in proc1.stdout:
@@ -108,6 +133,54 @@ def install_standalone_python():
         print("Error during PyTorch installation.")
         sys.exit(1)
 
+    print("\nInstalling llama-cpp-python...")
+    wheels_dir = os.path.join(addon_dir, "wheels")
+    
+    # First attempt: Check bundled wheels folder and (on macOS) the official Metal wheel index
+    llama_cmd = [
+        pip_exe, "install", 
+        "llama-cpp-python", 
+        "--find-links", wheels_dir,
+        "--no-warn-script-location"
+    ]
+    if os_name == "Darwin":
+        llama_cmd.extend(["--extra-index-url", "https://abetlen.github.io/llama-cpp-python/whl/metal"])
+    
+    proc_llama = subprocess.Popen(llama_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding='utf-8', errors='replace')
+    for line in proc_llama.stdout:
+        print(line, end='', flush=True)
+    proc_llama.wait()
+
+    if proc_llama.returncode != 0:
+        if os_name == "Darwin":
+            print("\nPre-built wheel installation failed. Checking build tools for compiling from source...")
+            tool_issues = check_mac_build_tools()
+            if tool_issues:
+                print("\n" + "=" * 65)
+                print("ERROR: Cannot compile llama-cpp-python on macOS.")
+                print("Missing required build tools:")
+                for issue in tool_issues:
+                    print(f"  * {issue}")
+                print("=" * 65 + "\n")
+                sys.exit(1)
+            else:
+                print("\nBuild tools found. Compiling llama-cpp-python from source with Metal...")
+                compile_env = os.environ.copy()
+                compile_env["CMAKE_ARGS"] = "-DGGML_METAL=on"
+                proc_compile = subprocess.Popen(
+                    [pip_exe, "install", "llama-cpp-python", "--no-binary", "llama-cpp-python", "--no-warn-script-location"],
+                    env=compile_env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding='utf-8', errors='replace'
+                )
+                for line in proc_compile.stdout:
+                    print(line, end='', flush=True)
+                proc_compile.wait()
+                if proc_compile.returncode != 0:
+                    print("Error compiling llama-cpp-python from source.")
+                    sys.exit(1)
+        else:
+            print("Error during llama-cpp-python installation.")
+            sys.exit(1)
+
     print("\nInstalling remaining dependencies...")
     dependencies = [
         "numpy<2.0.0",
@@ -115,7 +188,6 @@ def install_standalone_python():
         "transformers>=4.38.0",
         "safetensors",
         "huggingface_hub",
-        "llama-cpp-python",
         "torchdiffeq",
         "einops"
     ]

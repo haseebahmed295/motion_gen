@@ -6,8 +6,29 @@ from hymotion.network.text_encoders.model_constants import PROMPT_TEMPLATE_ENCOD
 from hymotion.utils.loaders import load_object
 from hymotion.pipeline.motion_diffusion import length_to_mask, randn_tensor
 import torch
+
+cuda_path = r"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.0\bin"
+if os.path.exists(cuda_path):
+    os.add_dll_directory(cuda_path)
+
 import numpy as np
 from torchdiffeq import odeint
+
+def clean_memory():
+    import gc
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        try:
+            torch.cuda.ipc_collect()
+        except Exception:
+            pass
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        try:
+            torch.mps.empty_cache()
+        except Exception:
+            pass
+
 
 class LlamaCppModelWrapper:
     def __init__(self, model_path, n_gpu_layers=-1):
@@ -67,7 +88,14 @@ def generate_pure_python(prompt, duration=3.0, seed=42, output_fbx="motion_outpu
     if seed == -1:
         import random
         seed = random.randint(1, 100000)
-    device = torch.device("cpu") if force_cpu else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if force_cpu:
+        device = torch.device("cpu")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     print(f"Using device: {device}")
 
     # ---------------------------------------------------------
@@ -81,15 +109,21 @@ def generate_pure_python(prompt, duration=3.0, seed=42, output_fbx="motion_outpu
     gguf_path = os.path.join(base_dir, "GGUF", "Qwen3-8B-UD-Q5_K_XL.gguf")
 
     print("Loading CLIP...")
-    clip_tokenizer = CLIPTokenizer.from_pretrained(
-        clip_path, local_files_only=True)
-    clip_model = CLIPTextModel.from_pretrained(
-        clip_path, local_files_only=True).to(device).eval()
+    try:
+        clip_tokenizer = CLIPTokenizer.from_pretrained(
+            clip_path, local_files_only=True)
+        clip_model = CLIPTextModel.from_pretrained(
+            clip_path, local_files_only=True).to(device).eval()
+    except Exception:
+        print("Local CLIP weights not found. Downloading openai/clip-vit-large-patch14 from HuggingFace...")
+        clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+        clip_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14").to(device).eval()
 
     print("Loading Qwen Tokenizer & Llama-CPP...")
     qwen_tokenizer = AutoTokenizer.from_pretrained(
         qwen_tok_path, padding_side="right", local_files_only=True)
-    llm = LlamaCppModelWrapper(model_path=gguf_path, n_gpu_layers=0)
+    gpu_layers = -1 if (torch.cuda.is_available() or (hasattr(torch.backends, "mps") and torch.backends.mps.is_available())) and not force_cpu else 0
+    llm = LlamaCppModelWrapper(model_path=gguf_path, n_gpu_layers=gpu_layers)
 
     # ---------------------------------------------------------
     # 2. ENCODE THE TEXT (CONDITIONING)
@@ -106,7 +140,7 @@ def generate_pure_python(prompt, duration=3.0, seed=42, output_fbx="motion_outpu
 
         # Free CLIP VRAM
         del clip_model, clip_enc, clip_out
-        torch.cuda.empty_cache()
+        clean_memory()
 
         # --- Qwen/Llama-CPP Encoding ---
         # Calculate crop start to remove system prompt padding later
@@ -149,14 +183,10 @@ def generate_pure_python(prompt, duration=3.0, seed=42, output_fbx="motion_outpu
         
         print("Unloading Qwen from GPU and wiping VRAM...")
     
-    import gc
     del llm.llm  # Kill the C++ backend
     del llm      # Kill the Python wrapper
-    gc.collect()  # Force garbage collection
-    torch.cuda.empty_cache()
-    if torch.cuda.is_available():
-        torch.cuda.ipc_collect()
-    print("VRAM cleared. Safe to load Diffusion Model.")
+    clean_memory()
+    print("VRAM / Unified Memory cleared. Safe to load Diffusion Model.")
 
     # ---------------------------------------------------------
     # 3. LOAD THE DIFFUSION NETWORK

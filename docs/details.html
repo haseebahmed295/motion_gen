@@ -68,7 +68,7 @@
   <section class="section reveal" id="os-compat">
     <span class="section__label">02 — Platform Support</span>
     <h2 class="section__title">OS Compatibility Guide</h2>
-    <p class="section__desc">Motion Gen is designed for Windows but works cross-platform with some manual setup.</p>
+    <p class="section__desc">Motion Gen provides 1-click automated setup for Windows and Apple Silicon macOS, with manual terminal setup options for Linux and Intel Macs.</p>
 
     <div class="os-grid">
       <!-- Windows -->
@@ -90,34 +90,37 @@
       </div>
 
       <!-- macOS -->
-      <div class="os-card">
+      <div class="os-card os-card--primary">
         <div class="os-card__header">
           <span class="os-card__icon">🍎</span>
           <div>
-            <h3>macOS (Intel &amp; Apple Silicon)</h3>
-            <span class="os-card__badge os-card__badge--partial">Partial — CPU Only</span>
+            <h3>macOS (Apple Silicon M1/M2/M3/M4)</h3>
+            <span class="os-card__badge os-card__badge--full">Full Support (Metal GPU)</span>
           </div>
         </div>
         <ul>
-          <li>The automated installer <strong>does not run</strong> on macOS — you must set up the Python environment manually via Terminal</li>
-          <li>No CUDA support; must enable <code>Force CPU</code> in addon preferences</li>
-          <li>Apple Silicon (M1/M2/M3/M4) machines need at least <strong>32 GB unified memory</strong></li>
-          <li>MPS (Metal) backend is <strong>not yet supported</strong> — all inference runs on CPU</li>
-          <li>Generation takes 10–15 minutes per animation</li>
+          <li><strong>1-click automated installer</strong> fully supported in Blender Preferences (downloads standalone ARM64 Python, PyTorch with MPS, and bundled Metal wheel)</li>
+          <li><strong>Metal &amp; MPS GPU Acceleration:</strong> Qwen 8B runs on Metal GPU via llama.cpp and the diffusion MMDiT runs on Apple Silicon MPS</li>
+          <li>Use <code>motion_gen-macos-arm64.zip</code> for a package tailored specifically to Apple Silicon</li>
+          <li><strong>Hardware Requirement:</strong> Minimum <strong>16 GB Unified Memory</strong> (24 GB+ strongly recommended). Close heavy apps on 16 GB machines</li>
+          <li><strong>Build Tools Fallback:</strong> Pre-compiled wheels are bundled. If building from source is ever required, install <code>xcode-select --install</code> and <code>brew install cmake</code></li>
         </ul>
-        <h4>Manual Setup (macOS)</h4>
+        <div class="os-card__verdict">✅ Fully supported on Apple Silicon — 1-click install in Blender Preferences</div>
+        
+        <h4 style="margin-top:16px;">Intel Mac / Manual Terminal Setup (Optional)</h4>
         <div class="code-block">
-<pre><code># 1. Install Python 3.11 (if not installed)
+<pre><code># 1. Install Python 3.11 (if not using 1-click installer)
 brew install python@3.11
 
 # 2. Create a venv inside the addon folder
 cd ~/Library/Application\ Support/Blender/4.2/scripts/addons/motion_gen
 python3.11 -m venv runtime
 
-# 3. Activate and install dependencies
+# 3. Activate and install dependencies with Metal support
 source runtime/bin/activate
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-pip install transformers einops scipy llama-cpp-python
+pip install torch torchvision torchaudio
+pip install llama-cpp-python --find-links wheels --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/metal
+pip install "numpy<2.0.0" scipy transformers safetensors huggingface_hub torchdiffeq einops
 
 # 4. Download models manually and place them:
 #    HY-Motion-1.0/latest.ckpt
@@ -135,7 +138,7 @@ pip install transformers einops scipy llama-cpp-python
           </div>
         </div>
         <ul>
-          <li>Automated installer is Windows-only — <strong>manual terminal setup required</strong></li>
+          <li>Automated 1-click installer currently targets Windows and Apple Silicon macOS — on Linux, <strong>manual terminal setup is required</strong></li>
           <li>NVIDIA GPUs with CUDA <strong>are supported</strong> if you install PyTorch with the correct CUDA index</li>
           <li>AMD GPUs via ROCm are <strong>experimental and unsupported</strong> by this addon</li>
           <li>Tested on Ubuntu 22.04 and Fedora 39</li>
@@ -166,7 +169,7 @@ pip install transformers einops scipy llama-cpp-python
 
     <div class="callout callout--warn" style="margin-top:20px">
       <span class="callout__icon">⚠️</span>
-      <div><strong>Important:</strong> On all platforms, the Python venv folder <em>must</em> be named <code>runtime</code> and placed directly inside the addon root directory. The addon looks for <code>runtime/python.exe</code> (Windows) or <code>runtime/bin/python</code> (macOS/Linux).</div>
+      <div><strong>Important:</strong> On all platforms, the Python venv folder <em>must</em> be named <code>runtime</code> and placed directly inside the addon root directory. The addon automatically detects <code>runtime/python.exe</code> (Windows) and <code>runtime/python/bin/python3</code> or <code>runtime/bin/python3</code> (macOS/Linux).</div>
     </div>
   </section>
 

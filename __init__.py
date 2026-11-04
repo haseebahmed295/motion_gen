@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Motion Gen",
     "author": "haseebahmed295",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > HY-Motion",
     "description": "Generate motion from prompt using HY-Motion and load into Blender.",
@@ -16,6 +16,44 @@ import sys
 import subprocess
 import threading
 import time
+import platform
+import glob
+
+def get_runtime_python(addon_dir=None):
+    if addon_dir is None:
+        addon_dir = os.path.dirname(os.path.realpath(__file__))
+    runtime_dir = os.path.join(addon_dir, "runtime")
+    
+    if platform.system() == "Windows":
+        return os.path.join(runtime_dir, "python.exe")
+    
+    candidates = [
+        os.path.join(runtime_dir, "python", "bin", "python3"),
+        os.path.join(runtime_dir, "python", "bin", "python"),
+        os.path.join(runtime_dir, "bin", "python3"),
+        os.path.join(runtime_dir, "bin", "python"),
+    ]
+    for cand in candidates:
+        if os.path.exists(cand):
+            return cand
+    return candidates[0]
+
+def check_env_status(addon_dir=None):
+    if addon_dir is None:
+        addon_dir = os.path.dirname(os.path.realpath(__file__))
+    runtime_dir = os.path.join(addon_dir, "runtime")
+    python_exe = get_runtime_python(addon_dir)
+    
+    if not os.path.exists(python_exe):
+        return False, False
+        
+    if platform.system() == "Windows":
+        site_packages = os.path.join(runtime_dir, "Lib", "site-packages")
+        return True, os.path.exists(os.path.join(site_packages, "torch"))
+    else:
+        torch_paths = glob.glob(os.path.join(runtime_dir, "**", "site-packages", "torch"), recursive=True)
+        return True, len(torch_paths) > 0
+
 
 def install_runtime_thread(operator_instance, python_exe, install_script):
     try:
@@ -146,13 +184,8 @@ class HYMOTION_OT_generate(bpy.types.Operator):
             return {'CANCELLED'}
         
         # Get addon dir
-        import platform
         addon_dir = os.path.dirname(os.path.realpath(__file__))
-        
-        if platform.system() == "Windows":
-            python_exe = os.path.join(addon_dir, "runtime", "python.exe")
-        else:
-            python_exe = os.path.join(addon_dir, "runtime", "bin", "python")
+        python_exe = get_runtime_python(addon_dir)
             
         run_d_py = os.path.join(addon_dir, "run_d.py")
         self._output_fbx = os.path.join(addon_dir, "motion_output.fbx")
@@ -484,25 +517,15 @@ class HYMotionPreferences(bpy.types.AddonPreferences):
         box.prop(self, "force_cpu")
         box.label(text="HY-Motion uses a disconnected Python 3.11 instance to prevent dependency conflicts with Blender.")
         
-        import platform
-        import glob
         addon_dir = os.path.dirname(os.path.realpath(__file__))
-        runtime_dir = os.path.join(addon_dir, "runtime")
-        
-        if platform.system() == "Windows":
-            python_exe = os.path.join(runtime_dir, "python.exe")
-            torch_path = os.path.join(runtime_dir, "Lib", "site-packages", "torch")
-            torch_installed = os.path.exists(torch_path)
-        else:
-            python_exe = os.path.join(runtime_dir, "bin", "python")
-            torch_paths = glob.glob(os.path.join(runtime_dir, "lib", "python*", "site-packages", "torch"))
-            torch_installed = len(torch_paths) > 0
+        python_exe = get_runtime_python(addon_dir)
+        runtime_installed, torch_installed = check_env_status(addon_dir)
         
         status = context.scene.hy_install_status
         is_installing = status.startswith("Installing")
         
         if not is_installing:
-            if not os.path.exists(python_exe):
+            if not runtime_installed:
                 env_state = "RUNTIME_MISSING"
             elif not torch_installed:
                 env_state = "MODULES_MISSING"
@@ -654,9 +677,8 @@ class HYMOTION_PT_main_panel(bpy.types.Panel):
 
         # --- Status & Actions ---
         addon_dir = os.path.dirname(os.path.realpath(__file__))
-        site_packages = os.path.join(addon_dir, "runtime", "Lib", "site-packages")
-        python_exe = os.path.join(addon_dir, "runtime", "python.exe")
-        env_ready = os.path.exists(python_exe) and os.path.exists(os.path.join(site_packages, "torch"))
+        runtime_installed, torch_installed = check_env_status(addon_dir)
+        env_ready = runtime_installed and torch_installed
 
         if not env_ready:
             layout.alert = True
